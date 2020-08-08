@@ -2,12 +2,8 @@
 #include <stdio.h>
 
 int main(){
-    pokedex_t* pokedex =pokedex_crear("yimy");
-    pokedex_avistar(pokedex,"avistamientos.txt");
-    printf("Ultimos Capturados\n");
+    pokedex_t* pokedex = pokedex_prender();
     pokedex_ultimos_capturados(pokedex);
-    printf("Ultimos Vistos\n");
+    printf("________$$$$$__________\n");
     pokedex_ultimos_vistos(pokedex);
-    printf("-------------------fsdsd----------------------\n");
-    pokedex_informacion(pokedex,25,"Pikante");
 }

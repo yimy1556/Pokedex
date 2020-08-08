@@ -19,7 +19,7 @@
 #define FORMATO_EVOLUCIONES "%d;%[^;];%d;%[^;];%[^\n]\n"
 #define NO_CAPTURADO 'N'
 #define SI_CAPTURADO 'S'
-#define INFORMACIO_POKEMONES "pokedex.txt"
+#define INFORMACIO_POKEMONES "pokedex1.txt"
 
 /** Función para el abb**/
 void pokemones_destruir(lista_t* pokemones){
@@ -88,6 +88,69 @@ especie_pokemon_t* copia_especia(especie_pokemon_t* especie){
     return copia; 
 }
 
+particular_pokemon_t* crear_pokemon2(FILE* arch_pokemon){
+    particular_pokemon_t* pokemon =  malloc(sizeof(particular_pokemon_t));
+    char capturado = '_';
+    if(!pokemon) return NULL;
+
+    fscanf(arch_pokemon,"%[^;];%i;%c\n",pokemon->nombre,&(pokemon->nivel),&capturado);
+    pokemon->capturado = (capturado == 'S')? true:false;
+    return pokemon;
+}
+
+especie_pokemon_t* crear_especie2(FILE* arch_pokemon){
+    especie_pokemon_t* especie = crear_especie();
+
+    if(!especie) return NULL;
+
+    fscanf(arch_pokemon,especie->nombre,&(especie->numero),especie->descripcion);
+
+    return especie;
+}
+
+int  cargar_pokemones(FILE* archivo, lista_t* lista_pokemones , pokedex_t* pokedex){
+    char tipo = '_';
+    int estado = EXITO;
+    fscanf(archivo,"%c;",&tipo);
+    while (!feof(archivo) && (tipo == 'P') && (estado == EXITO)){
+        particular_pokemon_t* pokemon = crear_pokemon2(archivo);
+        
+        if(!pokemon){
+            estado = ERROR;
+            continue;
+        }
+    
+        estado = lista_insertar(lista_pokemones,pokemon);
+        if (estado == EXITO) estado = vistos_o_capturados(pokedex,lista_pokemones);
+        
+        fscanf(archivo,"%c;",&tipo);
+    }
+    return estado;    
+}
+
+int lectura_pokedex(FILE* archivo, pokedex_t* pokedex){
+    char tipo = '_';
+    int estado = EXITO;
+    fscanf(archivo,"%c;",&tipo);
+
+    while (!feof(archivo) && (estado == EXITO) && tipo == 'E'){
+        especie_pokemon_t* especie =  crear_especie2(archivo);
+
+        if(!especie){
+            estado = ERROR;
+            continue;
+        }
+
+        if(ERROR == cargar_pokemones(archivo, especie->pokemones,pokedex)){
+            destructor_especia(especie);
+            estado = ERROR;
+        }
+
+        if (estado == EXITO) arbol_insertar(pokedex->pokemones,especie);
+    }
+    return estado;
+}
+
 int cargar_especie_en_pokedex(pokedex_t* pokedex, especie_pokemon_t* especie){
     especie_pokemon_t* especie_copia = copia_especia(especie);
     int estado = (especie_copia)? arbol_insertar(pokedex->pokemones,especie_copia):ERROR;
@@ -105,16 +168,21 @@ int cargar_especie(pokedex_t* pokedex, especie_pokemon_t* especie){
     return  estado;
 }
 
+int vistos_o_capturados(pokedex_t* pokedex,lista_t* lista_pokemones){
+    particular_pokemon_t* pokemon = lista_ultimo(lista_pokemones);
+    lista_t* aux = (pokemon->capturado)? pokedex->ultimos_capturados:pokedex->ultimos_vistos;  
+    int estado = (pokemon->capturado)? lista_encolar(aux, pokemon):lista_apilar(aux, pokemon);
+    
+    return estado;
+}
+
 int cargar_pokedex(pokedex_t* pokedex, especie_pokemon_t* especie){
     int estado = cargar_especie(pokedex, especie);
     
     if (estado == ERROR) return estado;
-    
-    particular_pokemon_t* pokemon = lista_primero(especie->pokemones);
+
+    estado = vistos_o_capturados(pokedex,especie->pokemones);
     lista_desencolar(especie->pokemones);
-    lista_t* aux = (pokemon->capturado)? pokedex->ultimos_capturados:pokedex->ultimos_vistos;  
-    estado = (pokemon->capturado)? lista_encolar(aux, pokemon):lista_apilar(aux, pokemon);
-    
     return estado;
 }
 
@@ -137,7 +205,6 @@ int lectura_pokemon(FILE* pokemones, especie_pokemon_t* especie){
 int lectura_especia(FILE* avistamiento, pokedex_t* pokedex,especie_pokemon_t* especie){
     
     fscanf(avistamiento, FORMATO_ESPECIA, &(especie->numero),especie->nombre,especie->descripcion);
-    mostrar(especie);
     int estado = lectura_pokemon(avistamiento,especie);
     
     return estado;
@@ -212,6 +279,24 @@ int lectura_evoluciones(FILE* evoluciones, pokedex_t* pokedex){
     return estado;
 }
 
+void info(lista_t* pokemones, FILE* arch){
+    if (lista_vacia(pokemones)) return;
+    particular_pokemon_t* pokemon = lista_primero(pokemones);
+    char caturado = (pokemon->capturado)? 'S':'N';
+    fprintf(arch,"%c;%s;%i;%c\n",'P',pokemon->nombre,pokemon->nivel,caturado);
+    lista_desencolar(pokemones);
+    info(pokemones, arch);
+    lista_encolar(pokemones, pokemon);
+}
+
+
+bool crear_archivo_p(void* dato,void* arch){
+    especie_pokemon_t* especie = (especie_pokemon_t*)dato;
+    fprintf(((FILE*)arch),"%c;%s;%i;%s",'E',especie->nombre,especie->numero,especie->descripcion);
+    info(especie->pokemones, arch);    
+    return false;
+}
+
 /** Función Generales **/
 pokedex_t* pokedex_crear(char entrenador[MAX_NOMBRE]){
     pokedex_t* pokedex = malloc(sizeof(pokedex_t));
@@ -227,6 +312,8 @@ pokedex_t* pokedex_crear(char entrenador[MAX_NOMBRE]){
 }
 
 int pokedex_avistar(pokedex_t *pokedex, char ruta_archivo[MAX_RUTA]){
+    if (!pokedex) return ERROR;
+
     FILE* pokemones = fopen(ruta_archivo, MODO_LECTURA);
 
     if(!pokemones) return ERROR;
@@ -281,29 +368,25 @@ void pokedex_destruir(pokedex_t* pokedex){
     free(pokedex);
 }
 
-void info(lista_t* pokemones, FILE* arch){
-    if (lista_vacia(pokemones)) return;
-    particular_pokemon_t* pokemon = lista_primero(pokemones);
-    char caturado = (pokemon->capturado)? 'S':'N';
-    fprintf(arch,"%c;%s;%i;%c\n",'P',pokemon->nombre,pokemon->nivel,caturado);
-    lista_desencolar(pokemones);
-    info(pokemones, arch);
-    lista_encolar(pokemones, pokemon);
-}
-
-
-bool crear_archivo_p(void* dato,void* arch){
-    especie_pokemon_t* especie = (especie_pokemon_t*)dato;
-    fprintf(((FILE*)arch),"%c;%s;%i;%s",'E',especie->nombre,especie->numero,especie->descripcion);
-    info(especie->pokemones, arch);    
-    return false;
-}
-
-
 int pokedex_apagar(pokedex_t* pokedex){
     FILE* archivo_pokedex = fopen(INFORMACIO_POKEMONES, MODO_CREAR);
     
     if (!archivo_pokedex) return ERROR;
     abb_con_cada_elemento(pokedex->pokemones,ABB_RECORRER_POSTORDEN,crear_archivo_p,archivo_pokedex);
+    pokedex_destruir(pokedex);
     return EXITO;
+}
+
+pokedex_t* pokedex_prender(){
+    FILE* archivo_pokedex = fopen(INFORMACIO_POKEMONES,MODO_LECTURA);
+    if(!archivo_pokedex) return NULL;
+
+    pokedex_t* pokedex = pokedex_crear("");
+
+    if(!pokedex) return NULL;
+
+    fscanf(archivo_pokedex,"%[^\n]\n", pokedex->nombre_entrenador);
+    lectura_pokedex(archivo_pokedex,pokedex);
+
+    return pokedex;
 }
