@@ -53,7 +53,7 @@ void informacion_pokedex(pokedex_t* pokedex,bool tipo_info){
     int especie = 0;
     char nombre_pokemon[TAM_MAXIMO];
     printf("ingrese numero de especie = ");
-    scanf(" %i ", &especie);
+    scanf(" %i", &especie);
     if (tipo_info){
         printf("ingrese nombre de pokemon = ");
         scanf(" %s",nombre_pokemon);

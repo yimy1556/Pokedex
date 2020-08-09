@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#define INICIO 0
 #define IGUAL 0
 #define MAYOR 1
 #define MENOR -1
@@ -20,6 +21,18 @@
 #define NO_CAPTURADO 'N'
 #define SI_CAPTURADO 'S'
 #define INFORMACIO_POKEMONES "pokedex1.txt"
+/* Muestra por pantalla el especie ingresado 
+ * PRE: ----
+ * POST: -----
+ */   
+void mostrar_especie(especie_pokemon_t* especie){
+    if(!especie) return;
+    printf("%i\n",especie->numero);
+    printf("%s\n",especie->nombre);
+    printf("%s\n",especie->descripcion);
+}
+
+
 
 /** Función para el abb**/
 /*libera la memoria  de los pokemones que estan en la lista
@@ -71,16 +84,6 @@ void mostrar_pokemon(particular_pokemon_t* pokemon){
     printf("%s\n",(pokemon->capturado)?"Capturado":"No Capturado");
 }
 
-/* Muestra por pantalla el especie ingresado 
- * PRE: ----
- * POST: -----
- */   
-void mostrar_especie(especie_pokemon_t* especie){
-    if(!especie) return;
-    printf("%i\n",especie->numero);
-    printf("%s\n",especie->nombre);
-    printf("%s\n",especie->descripcion);
-}
 
 int vistos_o_capturados(pokedex_t* pokedex,lista_t* lista_pokemones){
     particular_pokemon_t* pokemon = lista_ultimo(lista_pokemones);
@@ -149,8 +152,7 @@ especie_pokemon_t* crear_especie2(FILE* arch_pokemon){
 
     if(!especie) return NULL;
 
-    fscanf(arch_pokemon,especie->nombre,&(especie->numero),especie->descripcion);
-
+    fscanf(arch_pokemon,"%[^;];%d;%[^\n]\n",especie->nombre,&(especie->numero),especie->descripcion);
     return especie;
 }
 
@@ -402,6 +404,26 @@ bool crear_archivo_pokedex(void* dato,void* arch){
     informacion_pokemon(especie->pokemones, arch);    
     return false;
 }
+/**----------------------------------------------------------*/
+
+/* 
+ * Muestra por consola todos los pokemones que estan en la lista
+ * PRE: ----
+ * POST: ----
+ */
+void mostrar_lista_pokemones(lista_t* lista_pokemones){
+    if(lista_vacia(lista_pokemones)) return;
+    particular_pokemon_t* pokemon = lista_primero(lista_pokemones);
+    lista_borrar_de_posicion(lista_pokemones,INICIO);
+    mostrar_pokemon(pokemon);
+    mostrar_lista_pokemones(lista_pokemones);
+    lista_insertar_en_posicion(lista_pokemones, pokemon, INICIO);
+}
+
+void mensaje_error(){
+    printf("Te informamos que la especie o Pokémon es desconocido\n");
+}
+
 
 /** Función Generales **/
 pokedex_t* pokedex_crear(char entrenador[MAX_NOMBRE]){
@@ -461,10 +483,23 @@ void pokedex_informacion(pokedex_t* pokedex, int numero_pokemon, char nombre_pok
     especie_buscado.numero = numero_pokemon;
     strcpy(especie_buscado.nombre, nombre_pokemon);
     especie_pokemon_t* especie_encontrada = arbol_buscar(pokedex->pokemones, &especie_buscado);    
-    if(!especie_encontrada) return;
-    int posicion_pokemon = posicion_pokemon_buscado(especie_encontrada->pokemones,&especie_buscado);
-    particular_pokemon_t* pokemon_buscado = lista_elemento_en_posicion(especie_encontrada->pokemones,(size_t)posicion_pokemon);
-    mostrar_pokemon(pokemon_buscado);
+    if(!especie_encontrada){ 
+        mensaje_error();
+        return;
+    } 
+    mostrar_especie(especie_encontrada);  
+    if (strcmp(nombre_pokemon,"") == IGUAL) {
+        mostrar_lista_pokemones(especie_encontrada->pokemones);
+    }
+    else{ 
+        int posicion_pokemon = posicion_pokemon_buscado(especie_encontrada->pokemones,&especie_buscado);
+        if(posicion_pokemon == ERROR){ 
+            mensaje_error();
+            return;
+        }    
+        particular_pokemon_t* pokemon_buscado = lista_elemento_en_posicion(especie_encontrada->pokemones,(size_t)posicion_pokemon);
+        mostrar_pokemon(pokemon_buscado);
+    }
 }
 
 void pokedex_destruir(pokedex_t* pokedex){
@@ -480,7 +515,6 @@ int pokedex_apagar(pokedex_t* pokedex){
     if (!archivo_pokedex) return ERROR;
     fprintf(archivo_pokedex,"%s\n",pokedex->nombre_entrenador);
     abb_con_cada_elemento(pokedex->pokemones,ABB_RECORRER_POSTORDEN,crear_archivo_pokedex,archivo_pokedex);
-    pokedex_destruir(pokedex);
     fclose(archivo_pokedex);
     return EXITO;
 }
@@ -494,17 +528,7 @@ pokedex_t* pokedex_prender(){
     if(!pokedex) return NULL;
 
     fscanf(archivo_pokedex,"%[^\n]\n", pokedex->nombre_entrenador);
-    printf("%s\n",pokedex->nombre_entrenador);
     lectura_pokedex(archivo_pokedex,pokedex);
     fclose(archivo_pokedex);
     return pokedex;
 }
-
-
-/*mostar_listas()
-
-
-
-int canr_poopo(pokedex_t*  pokedex){
-    return
-*/
