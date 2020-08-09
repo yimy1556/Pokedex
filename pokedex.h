@@ -119,4 +119,6 @@ int pokedex_apagar(pokedex_t* pokedex);
  */
 pokedex_t* pokedex_prender();
 
+int canr_poopo(pokedex_t*  pokedex);
+
 #endif /* __POKEDEX_H__ */

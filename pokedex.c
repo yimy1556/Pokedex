@@ -58,6 +58,15 @@ void mostrar(especie_pokemon_t* especie){
     printf("%s\n",especie->descripcion);
 }
 
+
+int vistos_o_capturados(pokedex_t* pokedex,lista_t* lista_pokemones){
+    particular_pokemon_t* pokemon = lista_ultimo(lista_pokemones);
+    int estado = lista_apilar(pokedex->ultimos_vistos,pokemon);
+    if(pokemon->capturado) estado = lista_encolar(pokedex->ultimos_capturados, pokemon);
+
+    return estado;
+}
+
 especie_pokemon_t* crear_especie(){
     especie_pokemon_t* especie = malloc(sizeof(especie_pokemon_t));
 
@@ -168,14 +177,6 @@ int cargar_especie(pokedex_t* pokedex, especie_pokemon_t* especie){
     return  estado;
 }
 
-int vistos_o_capturados(pokedex_t* pokedex,lista_t* lista_pokemones){
-    particular_pokemon_t* pokemon = lista_ultimo(lista_pokemones);
-    lista_t* aux = (pokemon->capturado)? pokedex->ultimos_capturados:pokedex->ultimos_vistos;  
-    int estado = (pokemon->capturado)? lista_encolar(aux, pokemon):lista_apilar(aux, pokemon);
-    
-    return estado;
-}
-
 int cargar_pokedex(pokedex_t* pokedex, especie_pokemon_t* especie){
     int estado = cargar_especie(pokedex, especie);
     
@@ -194,8 +195,6 @@ int lectura_pokemon(FILE* pokemones, especie_pokemon_t* especie){
 
     fscanf(pokemones, FORMATO_POKEMON, pokemon->nombre,&(pokemon->nivel),&capturado);
     pokemon->capturado=(capturado == SI_CAPTURADO)? true:false;
-    mostrar_pokemon(pokemon);
-    printf("---------------------------------\n");
     lista_insertar(especie->pokemones,pokemon);
 
     return EXITO;
@@ -226,31 +225,35 @@ int lectura_avistamiento(FILE* avistamiento, pokedex_t* pokedex){
     return estado;
 }
 
-size_t posicion_pokemon_buscado(lista_t* pokemones, especie_pokemon_t* pokemon_buscado){
+int posicion_pokemon_buscado(lista_t* pokemones, especie_pokemon_t* pokemon_buscado){
     lista_iterador_t* lista_pokemones = lista_iterador_crear(pokemones);
-    size_t posicion_pokemon = 0;
+    int posicion_pokemon = 0;
     bool pokemon_encontrado = false;
     
-    while (lista_iterador_tiene_siguiente(lista_pokemones) || !pokemon_encontrado){
+    while (lista_iterador_tiene_siguiente(lista_pokemones) && !pokemon_encontrado){
         particular_pokemon_t* pokemon = lista_iterador_siguiente(lista_pokemones);
         
-        if (strcmp(pokemon_buscado->nombre, pokemon->nombre) == 0)  
-            pokemon_encontrado = pokemon->capturado;
-
+        if (strcmp(pokemon_buscado->nombre, pokemon->nombre) == 0){  
+            pokemon_encontrado = true;
+            if(!pokemon->capturado) posicion_pokemon = ERROR;
+            continue;
+        }
         posicion_pokemon++;
     }
     
     lista_iterador_destruir(lista_pokemones);
-    posicion_pokemon--;
-
     return posicion_pokemon;
 }
 
 particular_pokemon_t* evolucion_pokemon(pokedex_t* pokedex,especie_pokemon_t* especie){
     especie_pokemon_t* especie_pokemon  = arbol_buscar(pokedex->pokemones,especie);
-    size_t posicion_pokemon = posicion_pokemon_buscado(especie_pokemon->pokemones,especie);
-    particular_pokemon_t* pokemon_buscado = lista_elemento_en_posicion(especie_pokemon->pokemones,posicion_pokemon);
-    lista_elemento_en_posicion(especie_pokemon->pokemones,posicion_pokemon);
+    if(!especie_pokemon) return NULL;
+    int posicion_pokemon = posicion_pokemon_buscado(especie_pokemon->pokemones,especie);
+    
+    if (posicion_pokemon == ERROR) return NULL;
+    
+    particular_pokemon_t* pokemon_buscado = lista_elemento_en_posicion(especie_pokemon->pokemones,(size_t)posicion_pokemon);
+    lista_borrar_de_posicion(especie_pokemon->pokemones,(size_t)posicion_pokemon);
     return pokemon_buscado;    
 }
 
@@ -259,7 +262,9 @@ int lectura_evolucion(FILE* evoluciones, pokedex_t* pokedex, especie_pokemon_t* 
 
     fscanf(evoluciones,FORMATO_EVOLUCIONES,&(evolucion.numero),evolucion.nombre,&(especie->numero),especie->nombre,especie->descripcion);
     
-    return lista_insertar(especie->pokemones,evolucion_pokemon(pokedex, &evolucion));
+    particular_pokemon_t* pokemon = evolucion_pokemon(pokedex, &evolucion); 
+
+    return (!pokemon)?  ERROR:lista_insertar(especie->pokemones,pokemon);
 }
 
 int lectura_evoluciones(FILE* evoluciones, pokedex_t* pokedex){
@@ -267,9 +272,9 @@ int lectura_evoluciones(FILE* evoluciones, pokedex_t* pokedex){
     int estado = (especie)? EXITO:ERROR;
     
     while(!feof(evoluciones) && estado == EXITO){
-        estado = lectura_evolucion(evoluciones, pokedex, especie);
+        int estado_evolucion = lectura_evolucion(evoluciones, pokedex, especie);
         
-        if(estado == ERROR) continue;    
+        if(estado_evolucion == ERROR) continue;    
     
         estado = cargar_pokedex(pokedex, especie);
     }
@@ -292,7 +297,7 @@ void info(lista_t* pokemones, FILE* arch){
 
 bool crear_archivo_p(void* dato,void* arch){
     especie_pokemon_t* especie = (especie_pokemon_t*)dato;
-    fprintf(((FILE*)arch),"%c;%s;%i;%s",'E',especie->nombre,especie->numero,especie->descripcion);
+    fprintf(((FILE*)arch),"%c;%s;%i;%s\n",'E',especie->nombre,especie->numero,especie->descripcion);
     info(especie->pokemones, arch);    
     return false;
 }
@@ -356,8 +361,8 @@ void pokedex_informacion(pokedex_t* pokedex, int numero_pokemon, char nombre_pok
     strcpy(especie_buscado.nombre, nombre_pokemon);
     especie_pokemon_t* especie_encontrada = arbol_buscar(pokedex->pokemones, &especie_buscado);    
     if(!especie_encontrada) return;
-    size_t posicion_pokemon = posicion_pokemon_buscado(especie_encontrada->pokemones,&especie_buscado);
-    particular_pokemon_t* pokemon_buscado = lista_elemento_en_posicion(especie_encontrada->pokemones,posicion_pokemon);
+    int posicion_pokemon = posicion_pokemon_buscado(especie_encontrada->pokemones,&especie_buscado);
+    particular_pokemon_t* pokemon_buscado = lista_elemento_en_posicion(especie_encontrada->pokemones,(size_t)posicion_pokemon);
     mostrar_pokemon(pokemon_buscado);
 }
 
@@ -372,13 +377,15 @@ int pokedex_apagar(pokedex_t* pokedex){
     FILE* archivo_pokedex = fopen(INFORMACIO_POKEMONES, MODO_CREAR);
     
     if (!archivo_pokedex) return ERROR;
+    fprintf(archivo_pokedex,"%s\n",pokedex->nombre_entrenador);
     abb_con_cada_elemento(pokedex->pokemones,ABB_RECORRER_POSTORDEN,crear_archivo_p,archivo_pokedex);
     pokedex_destruir(pokedex);
+    fclose(archivo_pokedex);
     return EXITO;
 }
 
 pokedex_t* pokedex_prender(){
-    FILE* archivo_pokedex = fopen(INFORMACIO_POKEMONES,MODO_LECTURA);
+    FILE* archivo_pokedex = fopen("pokedex1.txt","r");
     if(!archivo_pokedex) return NULL;
 
     pokedex_t* pokedex = pokedex_crear("");
@@ -386,7 +393,17 @@ pokedex_t* pokedex_prender(){
     if(!pokedex) return NULL;
 
     fscanf(archivo_pokedex,"%[^\n]\n", pokedex->nombre_entrenador);
+    printf("%s\n",pokedex->nombre_entrenador);
     lectura_pokedex(archivo_pokedex,pokedex);
-
+    fclose(archivo_pokedex);
     return pokedex;
 }
+
+
+/*mostar_listas()
+
+
+
+int canr_poopo(pokedex_t*  pokedex){
+    return
+*/

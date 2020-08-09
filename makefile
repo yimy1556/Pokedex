@@ -1,4 +1,4 @@
-CC = gcc lista.c lista.h abb.c abb.h pokedex.c pokedex.h main.c -o
+CC = gcc lista.c lista.h abb.c abb.h pokedex.c pokedex.h interfaz_pokedex.c interfaz_pokedex.h main.c -o
 CFLAGS = -g -std=c99 -Wall -Wconversion -Wtype-limits -pedantic -Werror -O0
 VALGRIND = valgrind --leak-check=full --track-origins=yes --show-reachable=yes
 EXECUTABLE = pruebas

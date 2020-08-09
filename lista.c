@@ -274,7 +274,6 @@ void* lista_iterador_siguiente(lista_iterador_t* iterador){
 
 void lista_iterador_destruir(lista_iterador_t* iterador){
     free(iterador);
-
 }
 
 /// iterador Interno de la lista
