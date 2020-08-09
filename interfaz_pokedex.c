@@ -71,4 +71,61 @@ printf("                 ###############                    \n");
 }
 
 
-bool comandos_interfaz_validos(char comando);
+void  interfaz_primera_etapa(){
+    printf("%s",ANSI_COLOR_ROJO);
+printf("                  ##############                     \n");
+printf("                ##################                   \n");
+printf("              ##########  #########                  \n");
+printf("%s",ANSI_COLOR_BLUE);
+printf("-~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~-\n");
+printf("|               COMANDO VALIDOS                     |\n");
+printf("|                                                   |\n");
+printf("|          comando para I  iniciar pokedex          |\n");
+printf("|          comando para H  ver mas comandos         |\n");
+printf("|            comando para S  para salir             |\n");
+printf("|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|\n");
+printf("%s",ANSI_COLOR_RESET);
+printf("              ##########  #########               \n");
+printf("               ###################                  \n ");
+printf("                ###############                    \n");
+}
+
+void  interfaz_error_segunda_etapa(){
+    printf("%s",ANSI_COLOR_ROJO);
+printf("                  ##############                     \n");
+printf("                ##################                   \n");
+printf("              ##########  #########                  \n");
+printf("%s",ANSI_COLOR_BLUE);
+printf("-~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~-\n");
+printf("|             %s COMANDO INVALIDO %s                    |\n",ANSI_COLOR_ROJO, ANSI_COLOR_BLUE);
+printf("|                                                   |\n");
+printf("|           Comando G  guardar pokedex              |\n");
+printf("|           comando A  avistar Pokemon              |\n");
+printf("|         comando E  evolucionar Pokemon            |\n");
+printf("|      comando C para ver pokemones Capturas        |\n");
+printf("|       comando V para ver pokemones vistos         |\n");
+printf("|    comando  M para ver informacion de especie     |\n");
+printf("|    comando  P para ver informacion de especie     |\n");
+printf("|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|\n");
+printf("%s",ANSI_COLOR_RESET);
+printf("              ##########  #########              \n");
+printf("               ###################                  \n ");
+printf("                 ###############                    \n");
+}
+
+void interfaz_salida(){
+    printf("%s",ANSI_COLOR_ROJO);
+printf("                  ##############                     \n");
+printf("                ##################                   \n");
+printf("              ##########  #########                  \n");
+printf("%s",ANSI_COLOR_BLUE);
+printf("-~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~-\n");
+printf("|          %s SALISTE DE LA POKEDEX %s                    |\n",ANSI_COLOR_VERDE, ANSI_COLOR_BLUE);
+printf("|                                                   |\n");
+printf("|            Hasta luego entrenador                 |\n");
+printf("|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|\n");
+printf("%s",ANSI_COLOR_RESET);
+printf("              ##########  #########               \n");
+printf("               ###################                  \n ");
+printf("                 ###############                    \n");
+}

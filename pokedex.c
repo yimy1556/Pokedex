@@ -22,18 +22,33 @@
 #define INFORMACIO_POKEMONES "pokedex1.txt"
 
 /** Función para el abb**/
+/*libera la memoria  de los pokemones que estan en la lista
+ * PRE: ----
+ * POST: -----
+ */   
 void pokemones_destruir(lista_t* pokemones){
     if (lista_vacia(pokemones)) return;
     free(lista_primero(pokemones));
     lista_desencolar(pokemones);    
 }
+/*libera la memoria  del elemento ingresado
+ * PRE: ----
+ * POST: -----
+ */   
 
 void destructor_especia(void* elemento){
+    if(!elemento) return;
+    
     pokemones_destruir(((especie_pokemon_t*)elemento)->pokemones);
     lista_destruir(((especie_pokemon_t*)elemento)->pokemones);
     free(elemento);
 }
 
+/* Compara los 2 elemento ingresado y devuelve 0 si son iguales
+ * -1 primer elemento es menor al otro de lo contrario 1
+ * PRE: ----
+ * POST: -----
+ */   
 int comparador_especie_pokemon(void* especie_pokemon1 ,void* especie_pokemon2){
     especie_pokemon_t* aux1 = (especie_pokemon_t*)especie_pokemon1;
     especie_pokemon_t* aux2 = (especie_pokemon_t*)especie_pokemon2;
@@ -44,20 +59,28 @@ int comparador_especie_pokemon(void* especie_pokemon1 ,void* especie_pokemon2){
 }
 
 /* Funciones aux*/
-
+/* Muestra por pantalla el pokemon ingresado 
+ * PRE: ----
+ * POST: -----
+ */   
 void mostrar_pokemon(particular_pokemon_t* pokemon){
+    if (!pokemon) return;
+
     printf("%s\n",pokemon->nombre);
     printf("%i\n",pokemon->nivel);
     printf("%s\n",(pokemon->capturado)?"Capturado":"No Capturado");
 }
 
-
-void mostrar(especie_pokemon_t* especie){
+/* Muestra por pantalla el especie ingresado 
+ * PRE: ----
+ * POST: -----
+ */   
+void mostrar_especie(especie_pokemon_t* especie){
+    if(!especie) return;
     printf("%i\n",especie->numero);
     printf("%s\n",especie->nombre);
     printf("%s\n",especie->descripcion);
 }
-
 
 int vistos_o_capturados(pokedex_t* pokedex,lista_t* lista_pokemones){
     particular_pokemon_t* pokemon = lista_ultimo(lista_pokemones);
@@ -67,6 +90,10 @@ int vistos_o_capturados(pokedex_t* pokedex,lista_t* lista_pokemones){
     return estado;
 }
 
+/*
+ * PRE: ----
+ * POST: Devuelve especie_pokemon_t si salio todo bien de lo contrario NULL
+ */   
 especie_pokemon_t* crear_especie(){
     especie_pokemon_t* especie = malloc(sizeof(especie_pokemon_t));
 
@@ -82,6 +109,10 @@ especie_pokemon_t* crear_especie(){
     return especie;
 }
 
+/*  
+ * PRE: ----
+ * POST: Devuelve la copia especie_pokemon_t si salio todo bien de lo contrario NULL
+ */   
 especie_pokemon_t* copia_especia(especie_pokemon_t* especie){
     especie_pokemon_t* copia =  crear_especie();
     
@@ -97,7 +128,13 @@ especie_pokemon_t* copia_especia(especie_pokemon_t* especie){
     return copia; 
 }
 
-particular_pokemon_t* crear_pokemon2(FILE* arch_pokemon){
+
+/* 
+ * Crea un particular_pokemon_t con datos ya cargado que fue sacado del archivo ingresado
+ * PRE: ----
+ * POST: Devuelve la particular_pokemon_t si salio todo bien de lo contrario NULL
+ */  
+particular_pokemon_t* crear_pokemon(FILE* arch_pokemon){
     particular_pokemon_t* pokemon =  malloc(sizeof(particular_pokemon_t));
     char capturado = '_';
     if(!pokemon) return NULL;
@@ -117,12 +154,18 @@ especie_pokemon_t* crear_especie2(FILE* arch_pokemon){
     return especie;
 }
 
+
+/* 
+ * Carga todas las informaciones de los pokemones que estan en el archivo ingresado
+ * PRE: ----
+ * POST: Devuelve O si se pudo cargar bien todos los pokemones de lo contrario -1
+ */ 
 int  cargar_pokemones(FILE* archivo, lista_t* lista_pokemones , pokedex_t* pokedex){
     char tipo = '_';
     int estado = EXITO;
     fscanf(archivo,"%c;",&tipo);
     while (!feof(archivo) && (tipo == 'P') && (estado == EXITO)){
-        particular_pokemon_t* pokemon = crear_pokemon2(archivo);
+        particular_pokemon_t* pokemon = crear_pokemon(archivo);
         
         if(!pokemon){
             estado = ERROR;
@@ -137,6 +180,11 @@ int  cargar_pokemones(FILE* archivo, lista_t* lista_pokemones , pokedex_t* poked
     return estado;    
 }
 
+/* 
+ * Carga toda la informacion que esta archivo ingresado
+ * PRE: ----
+ * POST: Devuelve O si se pudo cargar bien todos los pokemones de lo contrario -1
+ */ 
 int lectura_pokedex(FILE* archivo, pokedex_t* pokedex){
     char tipo = '_';
     int estado = EXITO;
@@ -160,6 +208,11 @@ int lectura_pokedex(FILE* archivo, pokedex_t* pokedex){
     return estado;
 }
 
+/* 
+ * Cargar en la pokedex la especie ingresada
+ * PRE: ----
+ * POST: Devuelve O si se pudo cargar en la pokedex de lo contrario -1
+ */ 
 int cargar_especie_en_pokedex(pokedex_t* pokedex, especie_pokemon_t* especie){
     especie_pokemon_t* especie_copia = copia_especia(especie);
     int estado = (especie_copia)? arbol_insertar(pokedex->pokemones,especie_copia):ERROR;
@@ -187,6 +240,11 @@ int cargar_pokedex(pokedex_t* pokedex, especie_pokemon_t* especie){
     return estado;
 }
 
+/* 
+ * Carga la informacion que esta archivo ingresado en un especie_pokemon_t
+ * PRE: ----
+ * POST: Devuelve O si se pudo cargar bien todos los pokemones de lo contrario -1
+ */
 int lectura_pokemon(FILE* pokemones, especie_pokemon_t* especie){
     particular_pokemon_t* pokemon = malloc(sizeof(particular_pokemon_t));
     char capturado = '_';
@@ -200,8 +258,12 @@ int lectura_pokemon(FILE* pokemones, especie_pokemon_t* especie){
     return EXITO;
 }
 
-/*Revisar name*/
-int lectura_especia(FILE* avistamiento, pokedex_t* pokedex,especie_pokemon_t* especie){
+/* 
+ * Carga la informacion que esta archivo ingresado en un especie_pokemon_t
+ * PRE: ----
+ * POST: Devuelve O si se pudo cargar bien todos los pokemones de lo contrario -1
+ */
+int lectura_especie(FILE* avistamiento, pokedex_t* pokedex,especie_pokemon_t* especie){
     
     fscanf(avistamiento, FORMATO_ESPECIA, &(especie->numero),especie->nombre,especie->descripcion);
     int estado = lectura_pokemon(avistamiento,especie);
@@ -209,12 +271,17 @@ int lectura_especia(FILE* avistamiento, pokedex_t* pokedex,especie_pokemon_t* es
     return estado;
 }
 
+/* 
+ * Carga toda la informacion que esta archivo ingresado , en la pokedex
+ * PRE: ----
+ * POST: Devuelve O si se pudo cargar bien todos los pokemones de lo contrario -1
+ */
 int lectura_avistamiento(FILE* avistamiento, pokedex_t* pokedex){
     especie_pokemon_t* especie = crear_especie();
     int estado = (especie)? EXITO:ERROR;
     
     while(!feof(avistamiento) && estado == EXITO){
-        estado = lectura_especia(avistamiento, pokedex, especie);
+        estado = lectura_especie(avistamiento, pokedex, especie);
         
         if(estado == ERROR) continue;    
 
@@ -225,6 +292,11 @@ int lectura_avistamiento(FILE* avistamiento, pokedex_t* pokedex){
     return estado;
 }
 
+/* 
+ * Busca en la lista de pokemones la posicion del pokemon buscado
+ * PRE: ----
+ * POST: Devuelve la posicion en caso de encontrarlo de lo contrario -1
+ */
 int posicion_pokemon_buscado(lista_t* pokemones, especie_pokemon_t* pokemon_buscado){
     lista_iterador_t* lista_pokemones = lista_iterador_crear(pokemones);
     int posicion_pokemon = 0;
@@ -245,6 +317,11 @@ int posicion_pokemon_buscado(lista_t* pokemones, especie_pokemon_t* pokemon_busc
     return posicion_pokemon;
 }
 
+/* 
+ * Buscar el pokemon a evolucionar  que esta en la pokedex
+ * PRE: ----
+ * POST: Devuelve el pokemon que evoluciono si no esta el pokemon que va evoluciona devuelve NULL
+ */
 particular_pokemon_t* evolucion_pokemon(pokedex_t* pokedex,especie_pokemon_t* especie){
     especie_pokemon_t* especie_pokemon  = arbol_buscar(pokedex->pokemones,especie);
     if(!especie_pokemon) return NULL;
@@ -257,6 +334,11 @@ particular_pokemon_t* evolucion_pokemon(pokedex_t* pokedex,especie_pokemon_t* es
     return pokemon_buscado;    
 }
 
+/* 
+ * Carga el  pokemon  que evolucion en la nueva especie  .
+ * PRE: ----
+ * POST: Devuelve O si se pudo cargar bien todos los pokemones de lo contrario -1
+ */
 int lectura_evolucion(FILE* evoluciones, pokedex_t* pokedex, especie_pokemon_t* especie){
     especie_pokemon_t evolucion;
 
@@ -267,6 +349,11 @@ int lectura_evolucion(FILE* evoluciones, pokedex_t* pokedex, especie_pokemon_t* 
     return (!pokemon)?  ERROR:lista_insertar(especie->pokemones,pokemon);
 }
 
+/* 
+ * Carga los pokemones  que evolucionaron en la pokedex 
+ * PRE: ----
+ * POST: Devuelve O si se pudo cargar bien todos los pokemones de lo contrario -1
+ */
 int lectura_evoluciones(FILE* evoluciones, pokedex_t* pokedex){
     especie_pokemon_t* especie = crear_especie();
     int estado = (especie)? EXITO:ERROR;
@@ -284,21 +371,35 @@ int lectura_evoluciones(FILE* evoluciones, pokedex_t* pokedex){
     return estado;
 }
 
-void info(lista_t* pokemones, FILE* arch){
+
+/* Funcion para el iterador interno de abb*/
+/* 
+ * Funciona que sirve para  la funcion del el iterador interno del abb para obtener la informacion
+ * que esta  en el la pokedex 
+ * PRE: ----
+ * POST: ----
+ */
+void informacion_pokemon(lista_t* pokemones, FILE* arch){
     if (lista_vacia(pokemones)) return;
     particular_pokemon_t* pokemon = lista_primero(pokemones);
     char caturado = (pokemon->capturado)? 'S':'N';
     fprintf(arch,"%c;%s;%i;%c\n",'P',pokemon->nombre,pokemon->nivel,caturado);
     lista_desencolar(pokemones);
-    info(pokemones, arch);
+    informacion_pokemon(pokemones, arch);
     lista_encolar(pokemones, pokemon);
 }
 
 
-bool crear_archivo_p(void* dato,void* arch){
+/* 
+ * Funciona que sirve para el iterador interno del abb para obtener la informacion
+ * que esta  en el la pokedex 
+ * PRE: ----
+ * POST: ----
+ */
+bool crear_archivo_pokedex(void* dato,void* arch){
     especie_pokemon_t* especie = (especie_pokemon_t*)dato;
     fprintf(((FILE*)arch),"%c;%s;%i;%s\n",'E',especie->nombre,especie->numero,especie->descripcion);
-    info(especie->pokemones, arch);    
+    informacion_pokemon(especie->pokemones, arch);    
     return false;
 }
 
@@ -378,7 +479,7 @@ int pokedex_apagar(pokedex_t* pokedex){
     
     if (!archivo_pokedex) return ERROR;
     fprintf(archivo_pokedex,"%s\n",pokedex->nombre_entrenador);
-    abb_con_cada_elemento(pokedex->pokemones,ABB_RECORRER_POSTORDEN,crear_archivo_p,archivo_pokedex);
+    abb_con_cada_elemento(pokedex->pokemones,ABB_RECORRER_POSTORDEN,crear_archivo_pokedex,archivo_pokedex);
     pokedex_destruir(pokedex);
     fclose(archivo_pokedex);
     return EXITO;
